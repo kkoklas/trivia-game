@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Quiz Master | Διαδραστικό Κουίζ Γνώσεων</title>
-  <!-- Google Fonts: Outfit & Inter -->
+  <title>AI Quiz Battle 2P | Team vs Team</title>
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -19,24 +21,33 @@
             display: ['Outfit', 'sans-serif'],
           },
           colors: {
-            brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              400: '#818cf8',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-              900: '#1e1b4b',
+            teamA: {
+              300: '#67e8f9',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+              900: '#164e63',
+            },
+            teamB: {
+              300: '#f472b6',
+              400: '#f43f5e',
+              500: '#e11d48',
+              600: '#be123c',
+              900: '#881337',
             }
           },
           animation: {
-            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'float': 'float 3s ease-in-out infinite',
+            'glow-pulse': 'glowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-short': 'bounceShort 0.5s ease infinite alternate',
           },
           keyframes: {
-            float: {
-              '0%, 100%': { transform: 'translateY(0px)' },
-              '50%': { transform: 'translateY(-6px)' },
+            glowPulse: {
+              '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+              '50%': { opacity: '0.8', transform: 'scale(1.02)' },
+            },
+            bounceShort: {
+              '0%': { transform: 'translateY(0)' },
+              '100%': { transform: 'translateY(-4px)' }
             }
           }
         }
@@ -45,16 +56,16 @@
   </script>
   <style>
     body {
-      background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, #0f172a 50%, #020617 100%);
+      background: radial-gradient(circle at 50% 10%, #0f172a 0%, #050814 60%, #02040a 100%);
       min-height: 100vh;
       color: #f8fafc;
     }
     .glass-card {
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.78);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
     }
     .glass-btn {
       background: rgba(255, 255, 255, 0.04);
@@ -62,331 +73,399 @@
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .glass-btn:hover {
-      background: rgba(99, 102, 241, 0.15);
-      border-color: rgba(99, 102, 241, 0.4);
+      background: rgba(255, 255, 255, 0.1);
       transform: translateY(-2px);
+    }
+    .active-team-a {
+      border-color: #22d3ee !important;
+      box-shadow: 0 0 25px rgba(34, 211, 238, 0.45), inset 0 0 15px rgba(34, 211, 238, 0.15);
+    }
+    .active-team-b {
+      border-color: #f43f5e !important;
+      box-shadow: 0 0 25px rgba(244, 63, 94, 0.45), inset 0 0 15px rgba(244, 63, 94, 0.15);
     }
     .timer-ring {
       transition: stroke-dashoffset 0.2s linear, stroke 0.3s ease;
     }
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(99, 102, 241, 0.4);
-      border-radius: 9999px;
-    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 9999px; }
   </style>
 </head>
-<body class="font-sans antialiased selection:bg-indigo-500 selection:text-white flex flex-col justify-between p-3 sm:p-6 md:p-8">
+<body class="font-sans antialiased selection:bg-cyan-500 selection:text-black flex flex-col justify-between p-3 sm:p-5 md:p-6 min-h-screen">
 
-  <!-- Header -->
-  <header class="max-w-4xl w-full mx-auto flex items-center justify-between py-2 mb-4">
+  <!-- Top Header Bar -->
+  <header class="max-w-5xl w-full mx-auto flex items-center justify-between pb-3 mb-2 border-b border-slate-800/80">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-400 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-xl font-bold">
-        🧠
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-rose-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-xl font-black">
+        ⚔️
       </div>
       <div>
-        <h1 class="font-display font-extrabold text-xl sm:text-2xl tracking-tight bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">
-          AI Quiz Master
+        <h1 class="font-display font-black text-xl sm:text-2xl tracking-tight bg-gradient-to-r from-cyan-400 via-white to-rose-400 bg-clip-text text-transparent">
+          QUIZ BATTLE 2P
         </h1>
-        <p class="text-xs text-slate-400 font-medium">Ζωντανές ερωτήσεις μέσω Gemini AI</p>
+        <p class="text-xs text-slate-400 font-medium">Head-to-Head &bull; AI Powered Trivia</p>
       </div>
     </div>
 
-    <!-- Sound Toggle -->
-    <button id="soundToggleBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-btn text-xs font-semibold text-slate-300 hover:text-white">
-      <span id="soundIcon">🔊</span>
-      <span id="soundText" class="hidden sm:inline">Ήχος</span>
-    </button>
+    <div class="flex items-center gap-2">
+      <!-- Settings / API key Toggle -->
+      <button id="apiKeyToggleBtn" title="Ρύθμιση Gemini API Key" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-btn text-xs font-semibold text-slate-300 hover:text-white">
+        <span>🔑</span>
+        <span class="hidden sm:inline">API Key</span>
+      </button>
+
+      <!-- Sound Toggle -->
+      <button id="soundToggleBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-btn text-xs font-semibold text-slate-300 hover:text-white">
+        <span id="soundIcon">🔊</span>
+        <span id="soundText" class="hidden sm:inline">Ήχος</span>
+      </button>
+    </div>
   </header>
 
+  <!-- Persistent Scoreboard (Shown during gameplay & setup preview) -->
+  <div id="scoreboardContainer" class="max-w-4xl w-full mx-auto mb-4 grid grid-cols-2 gap-3 sm:gap-6">
+    <!-- Team 1 Card -->
+    <div id="teamCardA" class="glass-card rounded-2xl p-3 sm:p-4 border-2 border-cyan-500/30 transition-all duration-300 relative overflow-hidden">
+      <div class="absolute -right-6 -bottom-6 text-6xl opacity-10 select-none" id="teamBgEmojiA">⚡</div>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span id="teamAvatarDisplayA" class="text-2xl sm:text-3xl">🦅</span>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span id="teamTurnDotA" class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping hidden"></span>
+              <h2 id="teamNameDisplayA" class="font-display font-extrabold text-sm sm:text-base text-cyan-300 truncate max-w-[110px] sm:max-w-[160px]">
+                Ομάδα 1
+              </h2>
+            </div>
+            <span id="teamTurnIndicatorA" class="text-[10px] font-bold uppercase tracking-wider text-cyan-400/80 block">
+              Αναμονή
+            </span>
+          </div>
+        </div>
+        <div class="text-right">
+          <div id="scoreA" class="font-display font-black text-2xl sm:text-4xl text-cyan-400 tracking-tight">0</div>
+          <span id="streakA" class="text-[10px] font-bold text-amber-300 hidden">🔥 2x</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team 2 Card -->
+    <div id="teamCardB" class="glass-card rounded-2xl p-3 sm:p-4 border-2 border-rose-500/30 transition-all duration-300 relative overflow-hidden">
+      <div class="absolute -right-6 -bottom-6 text-6xl opacity-10 select-none" id="teamBgEmojiB">🔥</div>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span id="teamAvatarDisplayB" class="text-2xl sm:text-3xl">🐯</span>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span id="teamTurnDotB" class="w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping hidden"></span>
+              <h2 id="teamNameDisplayB" class="font-display font-extrabold text-sm sm:text-base text-rose-300 truncate max-w-[110px] sm:max-w-[160px]">
+                Ομάδα 2
+              </h2>
+            </div>
+            <span id="teamTurnIndicatorB" class="text-[10px] font-bold uppercase tracking-wider text-rose-400/80 block">
+              Αναμονή
+            </span>
+          </div>
+        </div>
+        <div class="text-right">
+          <div id="scoreB" class="font-display font-black text-2xl sm:text-4xl text-rose-400 tracking-tight">0</div>
+          <span id="streakB" class="text-[10px] font-bold text-amber-300 hidden">🔥 2x</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Container -->
-  <main class="max-w-3xl w-full mx-auto my-auto flex-1 flex flex-col justify-center">
+  <main class="max-w-4xl w-full mx-auto my-auto flex-1 flex flex-col justify-center">
 
     <!-- ==================== 1. SETUP SCREEN ==================== -->
-    <div id="setupScreen" class="glass-card rounded-2xl sm:rounded-3xl p-6 sm:p-8">
-      <div class="text-center mb-8">
-        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mb-3">
-          Απεριόριστες Ερωτήσεις & Θέματα
-        </span>
-        <h2 class="font-display text-2xl sm:text-4xl font-black text-white tracking-tight">
-          Τι θέλεις να δοκιμάσεις σήμερα;
-        </h2>
-        <p class="text-slate-400 text-sm mt-2 max-w-lg mx-auto">
-          Διάλεξε μια δημοφιλή κατηγορία ή γράψε οποιοδήποτε εξειδικευμένο θέμα θέλεις. Το AI θα δημιουργήσει μοναδικές ερωτήσεις σε πραγματικό χρόνο!
+    <div id="setupScreen" class="glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-8">
+      
+      <!-- API Key Modal / Drawer (Collapsible) -->
+      <div id="apiKeySection" class="hidden mb-6 p-4 rounded-xl bg-slate-900/90 border border-slate-700">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span>🔑</span> Προαιρετικό: Gemini API Key (Για απεριόριστες νέες ερωτήσεις)
+          </label>
+          <button id="closeApiKeyBtn" class="text-slate-400 hover:text-white text-xs">✕ Κλείσιμο</button>
+        </div>
+        <input type="password" id="customApiKeyInput" placeholder="Επικόλληση AI Studio API Key..." 
+               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+        <p class="text-[11px] text-slate-400 mt-1.5 leading-normal">
+          Αν το αφήσετε κενό, το παιχνίδι χρησιμοποιεί το ενσωματωμένο Gemini backend του Canvas ή την πλούσια offline βάση. Αποθηκεύεται μόνο τοπικά στον περιηγητή σας.
         </p>
       </div>
 
-      <!-- Category selection cards -->
+      <!-- Team Config Grid -->
       <div class="mb-6">
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">
-          1. Δημοφιλείς Κατηγορίες
+          1. Διαμόρφωση Ομάδων
         </label>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="categoriesGrid">
-          <button type="button" data-cat="Γενικές Γνώσεις" class="cat-pill flex items-center gap-2.5 p-3 rounded-xl glass-btn text-left text-sm font-medium border-indigo-500/40 bg-indigo-500/10 text-white">
-            <span class="text-xl">🌍</span>
-            <span>Γενικές Γνώσεις</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Team A Settings -->
+          <div class="p-3.5 rounded-xl bg-cyan-950/20 border border-cyan-500/30">
+            <span class="text-xs font-extrabold text-cyan-400 block mb-2">🔵 ΟΜΑΔΑ 1</span>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="nameInputA" value="Κυανοί Αετοί" maxlength="18" 
+                     class="flex-1 bg-slate-900/90 border border-cyan-500/40 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-400 font-semibold">
+              <select id="avatarSelectA" class="bg-slate-900/90 border border-cyan-500/40 rounded-lg px-2 text-xl text-white focus:outline-none">
+                <option value="🦅">🦅</option>
+                <option value="⚡">⚡</option>
+                <option value="🐺">🐺</option>
+                <option value="🚀">🚀</option>
+                <option value="👑">👑</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Team B Settings -->
+          <div class="p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30">
+            <span class="text-xs font-extrabold text-rose-400 block mb-2">🔴 ΟΜΑΔΑ 2</span>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="nameInputB" value="Κόκκινοι Τίγρεις" maxlength="18" 
+                     class="flex-1 bg-slate-900/90 border border-rose-500/40 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-400 font-semibold">
+              <select id="avatarSelectB" class="bg-slate-900/90 border border-rose-500/40 rounded-lg px-2 text-xl text-white focus:outline-none">
+                <option value="🐯">🐯</option>
+                <option value="🔥">🔥</option>
+                <option value="🐉">🐉</option>
+                <option value="🥊">🥊</option>
+                <option value="🦁">🦁</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories Selector -->
+      <div class="mb-5">
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+          2. Επιλογή Θεματολογίας
+        </label>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="categoriesGrid">
+          <button type="button" data-cat="Γενικές Γνώσεις & Trivia" class="cat-pill p-2.5 rounded-xl glass-btn text-left text-xs sm:text-sm font-semibold border-cyan-500/50 bg-cyan-500/10 text-white flex items-center gap-2">
+            <span>🌍</span> <span>Γενικές Γνώσεις</span>
           </button>
-          <button type="button" data-cat="Ιστορία & Μυθολογία" class="cat-pill flex items-center gap-2.5 p-3 rounded-xl glass-btn text-left text-sm font-medium text-slate-300">
-            <span class="text-xl">🏛️</span>
-            <span>Ιστορία & Μύθοι</span>
+          <button type="button" data-cat="Ελληνική & Παγκόσμια Ιστορία" class="cat-pill p-2.5 rounded-xl glass-btn text-left text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <span>🏛️</span> <span>Ιστορία & Μύθοι</span>
           </button>
-          <button type="button" data-cat="Επιστήμη & Διάστημα" class="cat-pill flex items-center gap-2.5 p-3 rounded-xl glass-btn text-left text-sm font-medium text-slate-300">
-            <span class="text-xl">🚀</span>
-            <span>Επιστήμη & Φυσική</span>
+          <button type="button" data-cat="Επιστήμη, Φυσική & Διάστημα" class="cat-pill p-2.5 rounded-xl glass-btn text-left text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <span>🚀</span> <span>Επιστήμη</span>
           </button>
-          <button type="button" data-cat="Τεχνολογία & AI" class="cat-pill flex items-center gap-2.5 p-3 rounded-xl glass-btn text-left text-sm font-medium text-slate-300">
-            <span class="text-xl">💻</span>
-            <span>Τεχνολογία & AI</span>
+          <button type="button" data-cat="Αθλητισμός & Champions League" class="cat-pill p-2.5 rounded-xl glass-btn text-left text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <span>⚽</span> <span>Αθλητισμός</span>
           </button>
-          <button type="button" data-cat="Κινηματογράφος & Σειρές" class="cat-pill flex items-center gap-2.5 p-3 rounded-xl glass-btn text-left text-sm font-medium text-slate-300">
-            <span class="text-xl">🎬</span>
-            <span>Σινεμά & TV</span>
+          <button type="button" data-cat="Σινεμά, Σειρές & Pop Culture" class="cat-pill p-2.5 rounded-xl glass-btn text-left text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <span>🎬</span> <span>Pop Culture</span>
           </button>
-          <button type="button" data-cat="Γεωγραφία & Ταξίδια" class="cat-pill flex items-center gap-2.5 p-3 rounded-xl glass-btn text-left text-sm font-medium text-slate-300">
-            <span class="text-xl">🗺️</span>
-            <span>Γεωγραφία</span>
+          <button type="button" data-cat="Γεωγραφία & Πρωτεύουσες" class="cat-pill p-2.5 rounded-xl glass-btn text-left text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <span>🗺️</span> <span>Γεωγραφία</span>
           </button>
         </div>
       </div>
 
-      <!-- Custom topic input -->
-      <div class="mb-6">
-        <label for="customTopic" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-          Ή Πληκτρολόγησε Δικό Σου Θέμα
-        </label>
-        <div class="relative">
-          <input type="text" id="customTopic" placeholder="π.χ. Formula 1, Marvel, Αρχαία Αίγυπτος, Rock Μουσική 90s..." 
-                 class="w-full bg-slate-900/80 border border-slate-700/80 focus:border-indigo-500 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all">
-          <span class="absolute right-3.5 top-3.5 text-slate-500 text-sm pointer-events-none">✨</span>
-        </div>
+      <!-- Custom topic -->
+      <div class="mb-5">
+        <input type="text" id="customTopic" placeholder="Ή γράψε δικό σου θέμα (π.χ. Formula 1, Marvel, 80s Rock, Anime)..." 
+               class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
       </div>
 
-      <!-- Difficulty & Count Selection -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+      <!-- Settings: Rounds per Team & Difficulty -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-            2. Βαθμός Δυσκολίας
+            3. Γύροι Ανά Ομάδα
           </label>
           <div class="grid grid-cols-3 gap-2">
-            <button type="button" data-diff="easy" class="diff-btn py-2.5 text-xs font-semibold rounded-lg glass-btn text-slate-300">
+            <button type="button" data-rounds="3" class="round-btn py-2 text-xs font-bold rounded-lg glass-btn text-slate-300">
+              3 Γύροι (6 σύνολο)
+            </button>
+            <button type="button" data-rounds="5" class="round-btn py-2 text-xs font-bold rounded-lg glass-btn border-cyan-500/50 bg-cyan-500/20 text-cyan-300">
+              5 Γύροι (10 σύνολο)
+            </button>
+            <button type="button" data-rounds="8" class="round-btn py-2 text-xs font-bold rounded-lg glass-btn text-slate-300">
+              8 Γύροι (16 σύνολο)
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+            4. Επίπεδο Δυσκολίας
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" data-diff="easy" class="diff-btn py-2 text-xs font-bold rounded-lg glass-btn text-slate-300">
               Εύκολο 🌱
             </button>
-            <button type="button" data-diff="medium" class="diff-btn py-2.5 text-xs font-semibold rounded-lg glass-btn border-indigo-500/50 bg-indigo-500/20 text-white font-bold">
+            <button type="button" data-diff="medium" class="diff-btn py-2 text-xs font-bold rounded-lg glass-btn border-cyan-500/50 bg-cyan-500/20 text-cyan-300">
               Μέτριο ⚡
             </button>
-            <button type="button" data-diff="hard" class="diff-btn py-2.5 text-xs font-semibold rounded-lg glass-btn text-slate-300">
+            <button type="button" data-diff="hard" class="diff-btn py-2 text-xs font-bold rounded-lg glass-btn text-slate-300">
               Δύσκολο 🔥
             </button>
           </div>
         </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-            3. Αριθμός Ερωτήσεων
-          </label>
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" data-count="5" class="count-btn py-2.5 text-xs font-semibold rounded-lg glass-btn border-indigo-500/50 bg-indigo-500/20 text-white font-bold">
-              5 Ερωτήσεις (Blitz)
-            </button>
-            <button type="button" data-count="10" class="count-btn py-2.5 text-xs font-semibold rounded-lg glass-btn text-slate-300">
-              10 Ερωτήσεις (Classic)
-            </button>
-          </div>
-        </div>
       </div>
 
-      <!-- Start Button -->
-      <button id="startQuizBtn" class="w-full py-4 px-6 rounded-xl font-display font-bold text-base bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 transform active:scale-[0.99] transition-all">
-        <span>Έναρξη Κουίζ</span>
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-        </svg>
+      <!-- Mode explanation rule -->
+      <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-2 mb-6">
+        <span class="text-lg">💡</span>
+        <span><strong>Κανόνας Steal:</strong> Εάν η ενεργή ομάδα απαντήσει λάθος ή τελειώσει ο χρόνος, η αντίπαλη ομάδα κερδίζει 5 δευτερόλεπτα για να κλέψει τους πόντους!</span>
+      </div>
+
+      <!-- Start Battle Button -->
+      <button id="startBattleBtn" class="w-full py-4 px-6 rounded-xl font-display font-black text-base sm:text-lg bg-gradient-to-r from-cyan-500 via-indigo-600 to-rose-500 hover:from-cyan-400 hover:to-rose-400 text-white shadow-2xl shadow-cyan-500/20 flex items-center justify-center gap-2 active:scale-[0.99] transition-all">
+        <span>⚔️ ΕΝΑΡΞΗ BATTLE</span>
       </button>
     </div>
 
     <!-- ==================== 2. LOADING SCREEN ==================== -->
-    <div id="loadingScreen" class="hidden glass-card rounded-2xl sm:rounded-3xl p-8 sm:p-14 text-center">
+    <div id="loadingScreen" class="hidden glass-card rounded-2xl sm:rounded-3xl p-10 text-center">
       <div class="relative w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-        <div class="absolute inset-0 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+        <div class="absolute inset-0 rounded-full border-4 border-cyan-500/20 border-t-cyan-400 border-r-rose-400 animate-spin"></div>
         <span class="text-3xl animate-bounce">🤖</span>
       </div>
       <h3 class="font-display text-2xl font-black text-white mb-2">
-        Δημιουργία Ερωτήσεων...
+        Δημιουργία Ερωτήσεων Battle...
       </h3>
       <p id="loadingStatusText" class="text-sm text-slate-400 max-w-sm mx-auto">
-        Το Gemini AI αναλύει το θέμα και κατασκευάζει πρωτότυπες ερωτήσεις πολλαπλής επιλογής.
+        Το Gemini AI συνθέτει ισορροπημένες ερωτήσεις για τις 2 ομάδες.
       </p>
-      <div class="mt-6 flex justify-center gap-1.5">
-        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping"></span>
-        <span class="w-2.5 h-2.5 rounded-full bg-violet-400 animate-ping" style="animation-delay: 0.2s"></span>
-        <span class="w-2.5 h-2.5 rounded-full bg-indigo-300 animate-ping" style="animation-delay: 0.4s"></span>
-      </div>
     </div>
 
     <!-- ==================== 3. GAMEPLAY SCREEN ==================== -->
     <div id="gameplayScreen" class="hidden flex flex-col gap-4">
 
-      <!-- Stats Bar & Timer -->
-      <div class="glass-card rounded-2xl p-4 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="relative w-12 h-12 flex items-center justify-center">
-            <svg class="w-12 h-12 transform -rotate-90">
-              <circle cx="24" cy="24" r="20" stroke="rgba(255,255,255,0.1)" stroke-width="3" fill="none" />
-              <circle id="timerCircle" class="timer-ring" cx="24" cy="24" r="20" stroke="#6366f1" stroke-width="3.5" fill="none" stroke-dasharray="125.6" stroke-dashoffset="0" stroke-linecap="round" />
-            </svg>
-            <span id="timerText" class="absolute font-display font-extrabold text-sm text-white">15</span>
-          </div>
-          <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ερωτηση</span>
-            <div class="font-display font-extrabold text-white text-base">
-              <span id="currentQNum">1</span><span class="text-slate-500 font-normal"> / </span><span id="totalQNum">5</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-3 sm:gap-6">
-          <div class="text-right">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Σκορ</span>
-            <div id="scoreDisplay" class="font-display font-extrabold text-amber-400 text-lg sm:text-xl">
-              0
-            </div>
-          </div>
-          <div id="streakBadge" class="hidden px-2.5 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">
-            🔥 <span id="streakCount">0</span>x Combo!
-          </div>
-        </div>
+      <!-- Round Info & Steal Alert Banner -->
+      <div id="turnBanner" class="p-3 rounded-xl text-center font-display font-black text-sm sm:text-base tracking-wide transition-all duration-300">
+        <!-- Injected via JS -->
       </div>
 
       <!-- Question Card -->
-      <div class="glass-card rounded-2xl sm:rounded-3xl p-6 sm:p-8">
-        <!-- Progress Bar -->
-        <div class="w-full bg-slate-800 rounded-full h-1.5 mb-6 overflow-hidden">
-          <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-violet-400 h-1.5 rounded-full transition-all duration-300" style="width: 20%"></div>
-        </div>
+      <div class="glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-7 relative overflow-hidden">
+        
+        <!-- Timer & Round progress row -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <!-- Circular countdown -->
+            <div class="relative w-12 h-12 flex items-center justify-center">
+              <svg class="w-12 h-12 transform -rotate-90">
+                <circle cx="24" cy="24" r="20" stroke="rgba(255,255,255,0.1)" stroke-width="3" fill="none" />
+                <circle id="timerCircle" class="timer-ring" cx="24" cy="24" r="20" stroke="#22d3ee" stroke-width="3.5" fill="none" stroke-dasharray="125.6" stroke-dashoffset="0" stroke-linecap="round" />
+              </svg>
+              <span id="timerText" class="absolute font-display font-black text-base text-white">15</span>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Γύρος</span>
+              <div class="font-display font-extrabold text-white text-sm sm:text-base">
+                <span id="currentQNum">1</span><span class="text-slate-500 font-normal"> / </span><span id="totalQNum">10</span>
+              </div>
+            </div>
+          </div>
 
-        <!-- Question Category Badge -->
-        <div class="flex items-center justify-between mb-3">
-          <span id="quizTopicBadge" class="text-xs font-bold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">
+          <!-- Question Category Badge -->
+          <span id="quizTopicBadge" class="text-xs font-bold text-slate-300 uppercase tracking-wider bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
             Γενικές Γνώσεις
           </span>
-          <span id="timeBonusTag" class="text-xs text-slate-400 font-medium">⚡ Speed Bonus Ενεργό</span>
         </div>
 
         <!-- Question Text -->
-        <h3 id="questionText" class="font-display text-lg sm:text-2xl font-bold text-white mb-6 leading-snug">
+        <h3 id="questionText" class="font-display text-lg sm:text-2xl font-bold text-white mb-6 leading-snug min-h-[56px]">
           Φόρτωση ερώτησης...
         </h3>
 
         <!-- Options Container -->
-        <div id="optionsContainer" class="grid grid-cols-1 gap-3 mb-6">
-          <!-- Dynamic 4 Options -->
+        <div id="optionsContainer" class="grid grid-cols-1 gap-3 mb-4">
+          <!-- 4 Options injected via JS -->
         </div>
 
-        <!-- Explanation Drawer (Hidden by default) -->
-        <div id="explanationBox" class="hidden p-4 rounded-xl border border-slate-700 bg-slate-900/90 text-sm animate-fadeIn">
+        <!-- Explanation Drawer -->
+        <div id="explanationBox" class="hidden p-3.5 rounded-xl border border-slate-700 bg-slate-900/95 text-xs sm:text-sm">
           <div class="flex items-start gap-2.5">
-            <span id="explanationIcon" class="text-lg">💡</span>
+            <span id="explanationIcon" class="text-xl">💡</span>
             <div>
-              <p id="explanationTitle" class="font-bold text-white text-xs uppercase tracking-wider mb-1">
-                Γνωρίζατε ότι;
+              <p id="explanationTitle" class="font-bold text-xs uppercase tracking-wider mb-1">
+                Αποτέλεσμα
               </p>
-              <p id="explanationText" class="text-slate-300 leading-relaxed text-xs sm:text-sm">
-                Επεξήγηση απάντησης...
+              <p id="explanationText" class="text-slate-300 leading-relaxed">
+                Επεξήγηση...
               </p>
             </div>
           </div>
         </div>
 
-        <!-- Next Question Button -->
-        <button id="nextBtn" class="hidden mt-6 w-full py-3.5 px-6 rounded-xl font-display font-bold text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
+        <!-- Next / Steal Button -->
+        <button id="nextBtn" class="hidden mt-4 w-full py-3.5 px-6 rounded-xl font-display font-black text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg flex items-center justify-center gap-2 transition-all">
           <span id="nextBtnText">Επόμενη Ερώτηση</span>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
           </svg>
         </button>
+
       </div>
 
     </div>
 
     <!-- ==================== 4. RESULTS SCREEN ==================== -->
-    <div id="resultsScreen" class="hidden glass-card rounded-2xl sm:rounded-3xl p-6 sm:p-8">
-      <div class="text-center mb-8">
-        <div id="resultIcon" class="text-5xl sm:text-6xl mb-3 animate-bounce">🏆</div>
-        <h2 id="resultTitle" class="font-display text-2xl sm:text-4xl font-black text-white">
-          Συγχαρητήρια!
-        </h2>
-        <p id="resultSubtitle" class="text-slate-400 text-sm mt-1">
-          Ολοκλήρωσες το κουίζ με εξαιρετική επίδοση!
-        </p>
-      </div>
+    <div id="resultsScreen" class="hidden glass-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center">
+      
+      <div id="winnerCrown" class="text-6xl mb-2 animate-bounce">👑</div>
+      <h2 id="winnerTitle" class="font-display text-3xl sm:text-5xl font-black mb-2 tracking-tight">
+        Νίκη για την Ομάδα 1!
+      </h2>
+      <p id="winnerSubtitle" class="text-slate-300 text-sm sm:text-base max-w-md mx-auto mb-8">
+        Μετά από μια συναρπαστική αναμέτρηση γνώσεων!
+      </p>
 
-      <!-- Stats Grid -->
-      <div class="grid grid-cols-3 gap-3 mb-8">
-        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
-          <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Σκορ</span>
-          <span id="finalScore" class="font-display font-black text-2xl sm:text-3xl text-amber-400 mt-1 block">
-            0
-          </span>
+      <!-- Head to Head Final Breakdown -->
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        <!-- Team A Final -->
+        <div id="finalBoxA" class="p-4 rounded-2xl bg-cyan-950/30 border-2 border-cyan-500/50">
+          <span class="text-3xl mb-1 block" id="finalAvatarA">🦅</span>
+          <h4 class="font-display font-extrabold text-cyan-300 text-base" id="finalNameA">Ομάδα 1</h4>
+          <div class="font-display font-black text-3xl sm:text-5xl text-white my-2" id="finalScoreA">0</div>
+          <div class="text-xs text-slate-400 space-y-1">
+            <p>Σωστές: <span class="text-cyan-300 font-bold" id="finalCorrectA">0</span></p>
+            <p>Steals: <span class="text-cyan-300 font-bold" id="finalStealsA">0</span></p>
+          </div>
         </div>
-        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
-          <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Ευστοχία</span>
-          <span id="finalAccuracy" class="font-display font-black text-2xl sm:text-3xl text-emerald-400 mt-1 block">
-            0%
-          </span>
-        </div>
-        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
-          <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Σωστές</span>
-          <span id="finalCorrectCount" class="font-display font-black text-2xl sm:text-3xl text-indigo-400 mt-1 block">
-            0/0
-          </span>
-        </div>
-      </div>
 
-      <!-- Review Section -->
-      <div class="mb-6">
-        <h4 class="font-display font-bold text-sm text-slate-300 uppercase tracking-wider mb-3 flex items-center justify-between">
-          <span>Ανασκόπηση Απαντήσεων</span>
-          <span class="text-xs font-normal text-slate-500">Πάτησε για λεπτομέρειες</span>
-        </h4>
-        <div id="reviewContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-          <!-- Injected via JS -->
+        <!-- Team B Final -->
+        <div id="finalBoxB" class="p-4 rounded-2xl bg-rose-950/30 border-2 border-rose-500/50">
+          <span class="text-3xl mb-1 block" id="finalAvatarB">🐯</span>
+          <h4 class="font-display font-extrabold text-rose-300 text-base" id="finalNameB">Ομάδα 2</h4>
+          <div class="font-display font-black text-3xl sm:text-5xl text-white my-2" id="finalScoreB">0</div>
+          <div class="text-xs text-slate-400 space-y-1">
+            <p>Σωστές: <span class="text-rose-300 font-bold" id="finalCorrectB">0</span></p>
+            <p>Steals: <span class="text-rose-300 font-bold" id="finalStealsB">0</span></p>
+          </div>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button id="retryBtn" class="py-3.5 px-5 rounded-xl font-display font-bold text-sm bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
-          <span>🔄 Παίξε Ξανά Ίδιο Θέμα</span>
+        <button id="rematchBtn" class="py-4 px-6 rounded-xl font-display font-black text-sm sm:text-base bg-gradient-to-r from-cyan-500 to-rose-500 hover:from-cyan-400 hover:to-rose-400 text-white shadow-xl flex items-center justify-center gap-2">
+          <span>🔄 Rematch (Ίδιες Ομάδες)</span>
         </button>
-        <button id="newTopicBtn" class="py-3.5 px-5 rounded-xl font-display font-bold text-sm glass-btn text-slate-200 hover:text-white flex items-center justify-center gap-2 transition-all">
-          <span>⚙️ Επιλογή Νέου Θέματος</span>
+        <button id="resetSetupBtn" class="py-4 px-6 rounded-xl font-display font-bold text-sm sm:text-base glass-btn text-slate-200 hover:text-white flex items-center justify-center gap-2">
+          <span>⚙️ Νέο Παιχνίδι / Θέμα</span>
         </button>
       </div>
+
     </div>
 
   </main>
 
   <!-- Notification Toast -->
-  <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
-    <span>⚠️</span>
+  <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-slate-800 shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 border border-slate-700">
+    <span id="toastIcon">⚠️</span>
     <span id="toastMsg">Μήνυμα</span>
   </div>
 
-  <!-- Footer -->
-  <footer class="max-w-4xl w-full mx-auto text-center py-4 text-xs text-slate-500">
-    AI Quiz Master &bull; Powered by Gemini 3 Flash &bull; Built with Tailwind & Web Audio
-  </footer>
-
-  <!-- Sound & Application Logic -->
+  <!-- Audio Synthesis & Application Engine -->
   <script>
-    // --- 1. Web Audio Synthesizer for Interactive Effects ---
-    class SoundFX {
+    // --- 1. Web Audio Synthesizer (Zero External Dependencies) ---
+    class SoundEngine {
       constructor() {
         this.ctx = null;
         this.enabled = true;
@@ -397,7 +476,7 @@
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioContext();
         }
-        if (this.ctx && this.ctx.state === 'suspended') {
+        if (this.ctx.state === 'suspended') {
           this.ctx.resume();
         }
       }
@@ -411,17 +490,17 @@
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        // Major third arpeggio (C5 -> E5 -> G5)
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, now);
-        osc.frequency.setValueAtTime(659.25, now + 0.08);
-        osc.frequency.setValueAtTime(783.99, now + 0.16);
+        osc.frequency.setValueAtTime(440, now); // A4
+        osc.frequency.setValueAtTime(554.37, now + 0.08); // C#5
+        osc.frequency.setValueAtTime(659.25, now + 0.16); // E5
+        osc.frequency.setValueAtTime(880, now + 0.24); // A5
 
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
         osc.start(now);
-        osc.stop(now + 0.45);
+        osc.stop(now + 0.5);
       }
 
       playWrong() {
@@ -434,14 +513,34 @@
         gain.connect(this.ctx.destination);
 
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(220, now);
-        osc.frequency.linearRampToValueAtTime(140, now + 0.35);
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.linearRampToValueAtTime(130, now + 0.35);
 
         gain.gain.setValueAtTime(0.2, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
 
         osc.start(now);
         osc.stop(now + 0.35);
+      }
+
+      playStealAlert() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.setValueAtTime(900, now + 0.1);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc.start(now);
+        osc.stop(now + 0.3);
       }
 
       playTick() {
@@ -454,52 +553,55 @@
         gain.connect(this.ctx.destination);
 
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, now);
-        gain.gain.setValueAtTime(0.05, now);
+        osc.frequency.setValueAtTime(900, now);
+        gain.gain.setValueAtTime(0.06, now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
 
         osc.start(now);
         osc.stop(now + 0.05);
       }
 
-      playComplete() {
+      playVictory() {
         if (!this.enabled) return;
         this.init();
-        const chords = [523.25, 659.25, 783.99, 1046.5]; // C E G C
-        chords.forEach((freq, i) => {
-          const now = this.ctx.currentTime + (i * 0.1);
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
+        notes.forEach((freq, i) => {
+          const now = this.ctx.currentTime + (i * 0.12);
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.connect(gain);
           gain.connect(this.ctx.destination);
 
-          osc.type = 'sine';
+          osc.type = 'triangle';
           osc.frequency.setValueAtTime(freq, now);
-          gain.gain.setValueAtTime(0.18, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
 
           osc.start(now);
-          osc.stop(now + 0.5);
+          osc.stop(now + 0.6);
         });
       }
     }
 
-    const sfx = new SoundFX();
+    const sound = new SoundEngine();
 
     // --- 2. State Management ---
     const state = {
-      selectedCategory: 'Γενικές Γνώσεις',
+      teamA: { name: 'Κυανοί Αετοί', avatar: '🦅', score: 0, correctCount: 0, steals: 0, streak: 0 },
+      teamB: { name: 'Κόκκινοι Τίγρεις', avatar: '🐯', score: 0, correctCount: 0, steals: 0, streak: 0 },
+      roundsPerTeam: 5,
+      totalQuestions: 10,
       difficulty: 'medium',
-      questionCount: 5,
+      selectedTopic: 'Γενικές Γνώσεις & Trivia',
+      activeTopic: '',
       questions: [],
       currentIndex: 0,
-      score: 0,
-      streak: 0,
-      timer: 15,
-      maxTimer: 15,
-      timerInterval: null,
+      activeTeam: 'A', // 'A' or 'B'
+      isStealPhase: false,
       answered: false,
-      userAnswers: [], // { question, selected, correct, isCorrect, explanation }
+      timer: 15,
+      timerInterval: null,
+      customApiKey: localStorage.getItem('gemini_quiz_key') || ''
     };
 
     // --- 3. DOM Elements ---
@@ -510,32 +612,67 @@
       results: document.getElementById('resultsScreen')
     };
 
+    // Setup Inputs
+    const nameInputA = document.getElementById('nameInputA');
+    const nameInputB = document.getElementById('nameInputB');
+    const avatarSelectA = document.getElementById('avatarSelectA');
+    const avatarSelectB = document.getElementById('avatarSelectB');
     const customTopicInput = document.getElementById('customTopic');
-    const startQuizBtn = document.getElementById('startQuizBtn');
+    const customApiKeyInput = document.getElementById('customApiKeyInput');
+    const apiKeySection = document.getElementById('apiKeySection');
+    const apiKeyToggleBtn = document.getElementById('apiKeyToggleBtn');
+    const closeApiKeyBtn = document.getElementById('closeApiKeyBtn');
+    const startBattleBtn = document.getElementById('startBattleBtn');
+
+    // Scoreboard UI
+    const teamCardA = document.getElementById('teamCardA');
+    const teamCardB = document.getElementById('teamCardB');
+    const teamNameDisplayA = document.getElementById('teamNameDisplayA');
+    const teamNameDisplayB = document.getElementById('teamNameDisplayB');
+    const teamAvatarDisplayA = document.getElementById('teamAvatarDisplayA');
+    const teamAvatarDisplayB = document.getElementById('teamAvatarDisplayB');
+    const teamTurnDotA = document.getElementById('teamTurnDotA');
+    const teamTurnDotB = document.getElementById('teamTurnDotB');
+    const teamTurnIndicatorA = document.getElementById('teamTurnIndicatorA');
+    const teamTurnIndicatorB = document.getElementById('teamTurnIndicatorB');
+    const scoreA = document.getElementById('scoreA');
+    const scoreB = document.getElementById('scoreB');
+    const streakA = document.getElementById('streakA');
+    const streakB = document.getElementById('streakB');
+
+    // Gameplay UI
+    const turnBanner = document.getElementById('turnBanner');
     const timerText = document.getElementById('timerText');
     const timerCircle = document.getElementById('timerCircle');
     const currentQNum = document.getElementById('currentQNum');
     const totalQNum = document.getElementById('totalQNum');
-    const scoreDisplay = document.getElementById('scoreDisplay');
-    const streakBadge = document.getElementById('streakBadge');
-    const streakCount = document.getElementById('streakCount');
-    const progressBar = document.getElementById('progressBar');
     const quizTopicBadge = document.getElementById('quizTopicBadge');
     const questionText = document.getElementById('questionText');
     const optionsContainer = document.getElementById('optionsContainer');
     const explanationBox = document.getElementById('explanationBox');
+    const explanationIcon = document.getElementById('explanationIcon');
+    const explanationTitle = document.getElementById('explanationTitle');
     const explanationText = document.getElementById('explanationText');
     const nextBtn = document.getElementById('nextBtn');
     const nextBtnText = document.getElementById('nextBtnText');
+
+    // Toast & Sound
     const toast = document.getElementById('toast');
     const toastMsg = document.getElementById('toastMsg');
     const soundToggleBtn = document.getElementById('soundToggleBtn');
     const soundIcon = document.getElementById('soundIcon');
 
-    // --- 4. Helper Toast ---
-    function showToast(message, isError = true) {
-      toastMsg.textContent = message;
-      toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-2xl transition-all duration-300 z-50 flex items-center gap-2 ${isError ? 'bg-rose-600' : 'bg-emerald-600'}`;
+    // Populate saved key if exists
+    if (state.customApiKey) {
+      customApiKeyInput.value = state.customApiKey;
+    }
+
+    // --- 4. Helper UI Functions ---
+    function showToast(msg, isSuccess = false) {
+      toastMsg.textContent = msg;
+      toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white shadow-2xl transition-all duration-300 z-50 flex items-center gap-2 border ${
+        isSuccess ? 'bg-emerald-700 border-emerald-500' : 'bg-rose-700 border-rose-500'
+      }`;
       toast.style.opacity = '1';
       toast.style.pointerEvents = 'auto';
       setTimeout(() => {
@@ -544,76 +681,108 @@
       }, 3500);
     }
 
-    // --- 5. Sound toggle ---
+    function switchScreen(key) {
+      Object.keys(screens).forEach(k => {
+        if (k === key) screens[k].classList.remove('hidden');
+        else screens[k].classList.add('hidden');
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Sound toggle
     soundToggleBtn.addEventListener('click', () => {
-      sfx.enabled = !sfx.enabled;
-      soundIcon.textContent = sfx.enabled ? '🔊' : '🔇';
-      showToast(sfx.enabled ? 'Ήχοι ενεργοποιημένοι' : 'Ήχοι σε σίγαση', false);
+      sound.enabled = !sound.enabled;
+      soundIcon.textContent = sound.enabled ? '🔊' : '🔇';
+      showToast(sound.enabled ? 'Ήχοι ενεργοί' : 'Σίγαση ήχων', true);
     });
 
-    // --- 6. Setup Listeners ---
-    // Category pills
+    // API key drawer handlers
+    apiKeyToggleBtn.addEventListener('click', () => {
+      apiKeySection.classList.toggle('hidden');
+    });
+    closeApiKeyBtn.addEventListener('click', () => {
+      apiKeySection.classList.add('hidden');
+    });
+    customApiKeyInput.addEventListener('change', (e) => {
+      const val = e.target.value.trim();
+      state.customApiKey = val;
+      localStorage.setItem('gemini_quiz_key', val);
+      showToast('Το API Key αποθηκεύτηκε τοπικά!', true);
+    });
+
+    // Sync input names with preview scoreboard
+    function updateSetupScoreboard() {
+      state.teamA.name = nameInputA.value.trim() || 'Ομάδα 1';
+      state.teamA.avatar = avatarSelectA.value;
+      state.teamB.name = nameInputB.value.trim() || 'Ομάδα 2';
+      state.teamB.avatar = avatarSelectB.value;
+
+      teamNameDisplayA.textContent = state.teamA.name;
+      teamAvatarDisplayA.textContent = state.teamA.avatar;
+      teamNameDisplayB.textContent = state.teamB.name;
+      teamAvatarDisplayB.textContent = state.teamB.avatar;
+    }
+
+    nameInputA.addEventListener('input', updateSetupScoreboard);
+    nameInputB.addEventListener('input', updateSetupScoreboard);
+    avatarSelectA.addEventListener('change', updateSetupScoreboard);
+    avatarSelectB.addEventListener('change', updateSetupScoreboard);
+
+    // Topic selection
     document.querySelectorAll('.cat-pill').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.cat-pill').forEach(b => {
-          b.className = 'cat-pill flex items-center gap-2.5 p-3 rounded-xl glass-btn text-left text-sm font-medium text-slate-300';
+          b.className = 'cat-pill p-2.5 rounded-xl glass-btn text-left text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-2';
         });
-        btn.className = 'cat-pill flex items-center gap-2.5 p-3 rounded-xl glass-btn text-left text-sm font-medium border-indigo-500/40 bg-indigo-500/10 text-white';
-        state.selectedCategory = btn.getAttribute('data-cat');
-        customTopicInput.value = ''; // Clear custom topic if clicking preset
+        btn.className = 'cat-pill p-2.5 rounded-xl glass-btn text-left text-xs sm:text-sm font-semibold border-cyan-500/50 bg-cyan-500/10 text-white flex items-center gap-2';
+        state.selectedTopic = btn.getAttribute('data-cat');
+        customTopicInput.value = '';
       });
     });
 
-    // Difficulty buttons
+    // Rounds selector
+    document.querySelectorAll('.round-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.round-btn').forEach(b => {
+          b.className = 'round-btn py-2 text-xs font-bold rounded-lg glass-btn text-slate-300';
+        });
+        btn.className = 'round-btn py-2 text-xs font-bold rounded-lg glass-btn border-cyan-500/50 bg-cyan-500/20 text-cyan-300';
+        state.roundsPerTeam = parseInt(btn.getAttribute('data-rounds'), 10);
+      });
+    });
+
+    // Difficulty selector
     document.querySelectorAll('.diff-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.diff-btn').forEach(b => {
-          b.className = 'diff-btn py-2.5 text-xs font-semibold rounded-lg glass-btn text-slate-300';
+          b.className = 'diff-btn py-2 text-xs font-bold rounded-lg glass-btn text-slate-300';
         });
-        btn.className = 'diff-btn py-2.5 text-xs font-semibold rounded-lg glass-btn border-indigo-500/50 bg-indigo-500/20 text-white font-bold';
+        btn.className = 'diff-btn py-2 text-xs font-bold rounded-lg glass-btn border-cyan-500/50 bg-cyan-500/20 text-cyan-300';
         state.difficulty = btn.getAttribute('data-diff');
       });
     });
 
-    // Question count buttons
-    document.querySelectorAll('.count-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.count-btn').forEach(b => {
-          b.className = 'count-btn py-2.5 text-xs font-semibold rounded-lg glass-btn text-slate-300';
-        });
-        btn.className = 'count-btn py-2.5 text-xs font-semibold rounded-lg glass-btn border-indigo-500/50 bg-indigo-500/20 text-white font-bold';
-        state.questionCount = parseInt(btn.getAttribute('data-count'), 10);
-      });
-    });
-
-    // --- 7. Gemini API Question Generation with Structured JSON Schema ---
-    async function generateQuestionsWithGemini(topic, difficulty, count) {
+    // --- 5. Gemini 3 Flash Generation Engine ---
+    async function fetchQuestionsFromGemini(topic, difficulty, count) {
       const difficultyMap = {
-        easy: 'Εύκολο (προσιτές, γενικές γνώσεις)',
-        medium: 'Μέτριο (ενδιαφέρουσες λεπτομέρειες, ισορροπημένη πρόκληση)',
-        hard: 'Δύσκολο (εξειδικευμένες γνώσεις, λιγότερο γνωστά facts)'
+        easy: 'Εύκολο (δημοφιλείς, προσιτές γνώσεις)',
+        medium: 'Μέτριο (ενδιαφέροντα στοιχεία, ισορροπημένο)',
+        hard: 'Δύσκολο (εξειδικευμένα facts, ανταγωνιστικό)'
       };
 
-      const systemPrompt = `Είσαι ένας ευφυής δημιουργός εκπαιδευτικών και ψυχαγωγικών παιχνιδιών Quiz στα Ελληνικά. 
-Δημιούργησε ακριβώς ${count} ερωτήσεις πολλαπλής επιλογής (4 επιλογές ανά ερώτηση, ακριβώς μία σωστή).
-Όλες οι ερωτήσεις, οι απαντήσεις και οι επεξηγήσεις πρέπει να είναι γραμμένες σε άπταιστα, φυσικά και σύγχρονα Ελληνικά.
-Οι ερωτήσεις πρέπει να είναι έγκυρες, διασκεδαστικές, χωρίς αμφισημίες και να βασίζονται σε πραγματικά στοιχεία.`;
+      const systemPrompt = `Είσαι ένας ενθουσιώδης game show host σε διαγωνισμό γνώσεων 2 Ομάδων στα Ελληνικά.
+Δημιούργησε ακριβώς ${count} ερωτήσεις πολλαπλής επιλογής (4 επιλογές, ακριβώς μία σωστή).
+Όλο το κείμενο (ερωτήσεις, επιλογές, επεξηγήσεις) πρέπει να είναι γραμμένο σε άψογα, σύγχρονα Ελληνικά.
+Δώσε σύντομη και συναρπαστική επεξήγηση (explanation) για το σωστό στοιχείο.`;
 
-      const userPrompt = `Θέμα: "${topic}". 
-Επίπεδο Δυσκολίας: ${difficultyMap[difficulty]}. 
-Αριθμός ερωτήσεων: ${count}.
-Δώσε δομημένο JSON array σύμφωνα με το καθορισμένο schema.`;
+      const userPrompt = `Θέμα Κουίζ: "${topic}".
+Επίπεδο Δυσκολίας: ${difficultyMap[difficulty]}.
+Πλήθος Ερωτήσεων: ${count}.
+Επίστρεψε μόνο δομημένο JSON array.`;
 
       const payload = {
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: userPrompt }]
-          }
-        ],
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
-        },
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
         generationConfig: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -621,35 +790,25 @@
             items: {
               type: "OBJECT",
               properties: {
-                question: { 
-                  type: "STRING", 
-                  description: "Η διατύπωση της ερώτησης στα Ελληνικά" 
-                },
+                question: { type: "STRING" },
                 options: {
                   type: "ARRAY",
-                  items: { type: "STRING" },
-                  description: "Ακριβώς 4 πιθανές απαντήσεις"
+                  items: { type: "STRING" }
                 },
-                correctIndex: { 
-                  type: "INTEGER", 
-                  description: "Ο μηδενικός δείκτης (0, 1, 2 ή 3) της σωστής απάντησης" 
-                },
-                explanation: { 
-                  type: "STRING", 
-                  description: "Μια ενδιαφέρουσα, συνοπτική πρόταση που εξηγεί γιατί είναι σωστό" 
-                }
+                answerIndex: { type: "INTEGER", description: "Δείκτης 0, 1, 2, ή 3 της σωστής απάντησης" },
+                explanation: { type: "STRING" }
               },
-              required: ["question", "options", "correctIndex", "explanation"],
-              propertyOrdering: ["question", "options", "correctIndex", "explanation"]
+              required: ["question", "options", "answerIndex", "explanation"],
+              propertyOrdering: ["question", "options", "answerIndex", "explanation"]
             }
           }
         }
       };
 
-      const apiKey = ""; // Canvas runtime provides the key automatically
+      // Χρήση είτε του custom κλειδιού είτε του κλειδιού περιβάλλοντος
+      const apiKey = state.customApiKey || "";
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-      // Exponential backoff fetch
       let delay = 1000;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
@@ -659,19 +818,12 @@
             body: JSON.stringify(payload)
           });
 
-          if (!response.ok) {
-            throw new Error(`HTTP error ${response.status}`);
-          }
-
-          const result = await response.json();
-          const candidate = result.candidates?.[0];
-          const rawJson = candidate?.content?.parts?.[0]?.text;
-
-          if (rawJson) {
-            const parsed = JSON.parse(rawJson);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              return parsed;
-            }
+          if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+          const data = await response.json();
+          const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
           }
         } catch (err) {
           if (attempt === 2) throw err;
@@ -679,283 +831,380 @@
           delay *= 2;
         }
       }
-      throw new Error("Δεν ήταν δυνατή η επεξεργασία του αποτελέσματος.");
+      throw new Error("Αποτυχία λήψης ερωτήσεων.");
     }
 
-    // --- 8. Offline Fallback Questions (για απόλυτη ασφάλεια) ---
-    function getFallbackQuestions(topic, count) {
-      const fallbacks = [
+    // --- 6. Rich Offline Fallback Repository (20+ questions) ---
+    function getFallbackQuestions(count) {
+      const bank = [
         {
-          question: "Ποιο είναι το κοντινότερο ουράνιο σώμα στη Γη;",
+          question: "Ποιο είναι το κοντινότερο ουράνιο σώμα στον πλανήτη Γη;",
           options: ["Ο Άρης", "Η Σελήνη", "Η Αφροδίτη", "Ο Ήλιος"],
-          correctIndex: 1,
+          answerIndex: 1,
           explanation: "Η Σελήνη απέχει κατά μέσο όρο περίπου 384.400 χιλιόμετρα από τη Γη."
         },
         {
-          question: "Ποιος Έλληνας μαθηματικός αναφώνησε το διάσημο «Εύρηκα!»;",
+          question: "Ποιος Έλληνας μαθηματικός αναφώνησε το ιστορικό «Εύρηκα!»;",
           options: ["Ο Πυθαγόρας", "Ο Ευκλείδης", "Ο Αρχιμήδης", "Ο Θαλής ο Μιλήσιος"],
-          correctIndex: 2,
-          explanation: "Ο Αρχιμήδης το αναφώνησε όταν συνειδητοποίησε την άνωση μπαίνοντας στο λουτρό."
+          answerIndex: 2,
+          explanation: "Ο Αρχιμήδης το αναφώνησε όταν ανακάλυψε τον νόμο της άνωσης στο λουτρό."
         },
         {
-          question: "Ποια είναι η μεγαλύτερη σε έκταση χώρα στον κόσμο;",
-          options: ["Ο Καναδάς", "Η Κίνα", "Οι Ηνωμένες Πολιτείες", "Η Ρωσία"],
-          correctIndex: 3,
-          explanation: "Η Ρωσία καλύπτει πάνω από 17 εκατομμύρια τετραγωνικά χιλιόμετρα."
+          question: "Σε ποια χώρα διοργανώθηκαν οι πρώτοι σύγχρονοι Ολυμπιακοί Αγώνες το 1896;",
+          options: ["Στη Γαλλία", "Στην Ελλάδα", "Στη Μεγάλη Βρετανία", "Στις ΗΠΑ"],
+          answerIndex: 1,
+          explanation: "Οι αγώνες διεξήχθησαν στην Αθήνα, στο Παναθηναϊκό Στάδιο."
         },
         {
-          question: "Σε ποια γλώσσα προγραμματισμού δημιουργήθηκε αρχικά το Web;",
-          options: ["HTML", "Python", "C++", "Java"],
-          correctIndex: 0,
-          explanation: "Η HTML αναπτύχθηκε από τον Tim Berners-Lee στο CERN το 1991."
-        },
-        {
-          question: "Ποιο είναι το βαθύτερο σημείο των ωκεανών στον πλανήτη;",
-          options: ["Η Τάφρος της Ιάβας", "Η Τάφρος των Μαριανών", "Η Τάφρος του Πουέρτο Ρίκο", "Η Τάφρος των Φιλιππίνων"],
-          correctIndex: 1,
-          explanation: "Η Τάφρος των Μαριανών στον Ειρηνικό Ωκεανό φτάνει σε βάθος περίπου 11.000 μέτρα."
-        },
-        {
-          question: "Ποιος ζωγράφισε τον διάσημο πίνακα «Έναστρη Νύχτα»;",
-          options: ["Πάμπλο Πικάσο", "Βίνσεντ βαν Γκογκ", "Κλοντ Μονέ", "Σαλβαδόρ Νταλί"],
-          correctIndex: 1,
-          explanation: "Ο Βαν Γκογκ δημιούργησε την «Έναστρη Νύχτα» το 1889 στο άσυλο του Σεν Ρεμί."
-        },
-        {
-          question: "Ποιο χημικό στοιχείο έχει το σύμβολο 'Au' στον περιοδικό πίνακα;",
+          question: "Ποιο χημικό στοιχείο συμβολίζεται με τα γράμματα 'Au';",
           options: ["Ο Άργυρος", "Ο Χρυσός", "Ο Χαλκός", "Το Αλουμίνιο"],
-          correctIndex: 1,
-          explanation: "Προέρχεται από τη λατινική λέξη 'Aurum' που σημαίνει χρυσός."
+          answerIndex: 1,
+          explanation: "Προέρχεται από τη λατινική λέξη 'Aurum' που σημαίνει λαμπερή αυγή."
         },
         {
-          question: "Πόσες συμφωνίες συνέθεσε ο Λούντβιχ βαν Μπετόβεν;",
+          question: "Ποιος σκηνοθέτησε την ταινία «Οπενχάιμερ» και το «Inception»;",
+          options: ["Κουέντιν Ταραντίνο", "Κρίστοφερ Νόλαν", "Στίβεν Σπίλμπεργκ", "Μάρτιν Σκορσέζε"],
+          answerIndex: 1,
+          explanation: "Ο Κρίστοφερ Νόλαν κέρδισε και το Όσκαρ Σκηνοθεσίας για το Οπενχάιμερ το 2024."
+        },
+        {
+          question: "Ποια είναι η πρωτεύουσα της Αυστραλίας;",
+          options: ["Το Σίδνεϊ", "Η Μελβούρνη", "Η Καμπέρα", "Το Μπρίσμπεϊν"],
+          answerIndex: 2,
+          explanation: "Η Καμπέρα επιλέχθηκε ως συμβιβαστική λύση ανάμεσα στο Σίδνεϊ και τη Μελβούρνη."
+        },
+        {
+          question: "Πόσες συμφωνίες ολοκλήρωσε ο Λούντβιχ βαν Μπετόβεν;",
           options: ["7", "9", "12", "5"],
-          correctIndex: 1,
-          explanation: "Ολοκλήρωσε 9 συμφωνίες, με την 9η να περιλαμβάνει τη διάσημη «Ωδή στη Χαρά»."
+          answerIndex: 1,
+          explanation: "Ολοκλήρωσε 9 συμφωνίες, με την 9η να περιέχει την πασίγνωστη «Ωδή στη Χαρά»."
         },
         {
-          question: "Ποιο είναι το γρηγορότερο ζώο της στεριάς;",
-          options: ["Το Τσιτάχ (Γατόπαρδος)", "Η Αντιλόπη", "Το Λιοντάρι", "Το Άλογο"],
-          correctIndex: 0,
-          explanation: "Το τσιτάχ μπορεί να φτάσει ταχύτητες έως και 110-120 χλμ/ώρα σε σύντομες διαδρομές."
+          question: "Ποιος πλανήτης του ηλιακού μας συστήματος είναι γνωστός ως ο «Κόκκινος Πλανήτης»;",
+          options: ["Ο Δίας", "Ο Ερμής", "Ο Άρης", "Ο Κρόνος"],
+          answerIndex: 2,
+          explanation: "Το κοκκινωπό του χρώμα οφείλεται στην οξείδωση του σιδήρου (σκουριά) στην επιφάνειά του."
         },
         {
-          question: "Ποιος αρχαίος ναός βρίσκεται στην κορυφή της Ακρόπολης των Αθηνών;",
-          options: ["Ο Παρθενώνας", "Ο Ναός του Ηφαίστου", "Το Ερέχθειο", "Ο Ναός του Διός"],
-          correctIndex: 0,
-          explanation: "Ο Παρθενώνας ήταν αφιερωμένος στη θεά Αθηνά και ολοκληρώθηκε το 438 π.Χ."
+          question: "Ποια ομάδα κατέκτησε το Euro 2004 στο ποδόσφαιρο;",
+          options: ["Η Πορτογαλία", "Η Ελλάδα", "Η Γαλλία", "Η Ιταλία"],
+          answerIndex: 1,
+          explanation: "Η Εθνική Ελλάδος πέτυχε ένα από τα μεγαλύτερα θαύματα στην ιστορία των σπορ."
+        },
+        {
+          question: "Ποιο είναι το μεγαλύτερο σε έκταση νησί της Μεσογείου;",
+          options: ["Η Κρήτη", "Η Κύπρος", "Η Σικελία", "Η Σαρδηνία"],
+          answerIndex: 2,
+          explanation: "Η Σικελία καλύπτει πάνω από 25.700 τετραγωνικά χιλιόμετρα."
+        },
+        {
+          question: "Ποιο είναι το ταχύτερο χερσαίο ζώο στον κόσμο;",
+          options: ["Το Γατόπαρδο (Τσιτάχ)", "Το Λιοντάρι", "Η Αντιλόπη", "Η Λεοπάρδαλη"],
+          answerIndex: 0,
+          explanation: "Το τσιτάχ μπορεί να ξεπεράσει τα 110 χλμ/ώρα σε σύντομες επιταχύνσεις."
+        },
+        {
+          question: "Ποιος εφηύρε τον παγκόσμιο ιστό (World Wide Web) το 1989;",
+          options: ["Ο Μπιλ Γκέιτς", "Ο Τιμ Μπέρνερς-Λι", "Ο Στιβ Τζομπς", "Ο Άλαν Τιούρινγκ"],
+          answerIndex: 1,
+          explanation: "Ο Tim Berners-Lee πρότεινε το σύστημα υπερκειμένου εργαζόμενος στο CERN."
+        },
+        {
+          question: "Ποια θεά της αρχαίας ελληνικής μυθολογίας ήταν η θεά της σοφίας;",
+          options: ["Η Ήρα", "Η Αφροδίτη", "Η Αθηνά", "Η Άρτεμις"],
+          answerIndex: 2,
+          explanation: "Η Αθηνά γεννήθηκε από το κεφάλι του Δία πάνοπλη και ήταν προστάτιδα της πόλης των Αθηνών."
+        },
+        {
+          question: "Σε ποια χώρα βρίσκεται το ιστορικό μνημείο Μάτσου Πίτσου;",
+          options: ["Στη Βολιβία", "Στο Περού", "Στη Χιλή", "Στην Κολομβία"],
+          answerIndex: 1,
+          explanation: "Είναι αρχαία πόλη των Ίνκας χτισμένη στις Άνδεις σε υψόμετρο 2.430 μέτρων."
+        },
+        {
+          question: "Ποιο όργανο του ανθρώπινου σώματος καταναλώνει περίπου το 20% της συνολικής ενέργειας;",
+          options: ["Η καρδιά", "Ο εγκέφαλος", "Το συκώτι", "Οι πνεύμονες"],
+          answerIndex: 1,
+          explanation: "Παρότι αποτελεί μόλις το 2% του σωματικού βάρους, ο εγκέφαλος καταναλώνει το 1/5 της ενέργειας."
+        },
+        {
+          question: "Ποια είναι η βαθύτερη τάφρος όλων των ωκεανών στη Γη;",
+          options: ["Των Μαριανών", "Του Πουέρτο Ρίκο", "Της Ιάβας", "Των Φιλιππίνων"],
+          answerIndex: 0,
+          explanation: "Η Τάφρος των Μαριανών στον Ειρηνικό ξεπερνά σε βάθος τα 10.900 μέτρα."
         }
       ];
-      return fallbacks.slice(0, count);
+      // Shuffle & return requested count
+      return bank.sort(() => 0.5 - Math.random()).slice(0, count);
     }
 
-    // --- 9. Screen Navigation ---
-    function showScreen(screenKey) {
-      Object.keys(screens).forEach(k => {
-        if (k === screenKey) {
-          screens[k].classList.remove('hidden');
-        } else {
-          screens[k].classList.add('hidden');
-        }
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // --- 7. Start Battle Logic ---
+    startBattleBtn.addEventListener('click', async () => {
+      sound.init();
+      updateSetupScoreboard();
 
-    // --- 10. Start Quiz Handler ---
-    startQuizBtn.addEventListener('click', async () => {
-      sfx.init();
-
-      // Determine active topic
-      const customVal = customTopicInput.value.trim();
-      const activeTopic = customVal ? customVal : state.selectedCategory;
-
-      state.activeTopic = activeTopic;
-      state.score = 0;
-      state.streak = 0;
+      state.activeTopic = customTopicInput.value.trim() || state.selectedTopic;
+      state.totalQuestions = state.roundsPerTeam * 2;
       state.currentIndex = 0;
-      state.userAnswers = [];
-      streakBadge.classList.add('hidden');
+      state.activeTeam = 'A';
+      state.isStealPhase = false;
+      state.answered = false;
 
-      showScreen('loading');
+      // Reset Team Game Stats
+      state.teamA.score = 0;
+      state.teamA.correctCount = 0;
+      state.teamA.steals = 0;
+      state.teamA.streak = 0;
+
+      state.teamB.score = 0;
+      state.teamB.correctCount = 0;
+      state.teamB.steals = 0;
+      state.teamB.streak = 0;
+
+      updateScoreboardDisplays();
+      switchScreen('loading');
 
       try {
-        const questions = await generateQuestionsWithGemini(
-          activeTopic, 
-          state.difficulty, 
-          state.questionCount
-        );
-        state.questions = questions;
+        state.questions = await fetchQuestionsFromGemini(state.activeTopic, state.difficulty, state.totalQuestions);
       } catch (err) {
-        console.warn("Gemini call failed or rate limited, falling back to local dataset:", err);
-        showToast("Χρήση εφεδρικών ερωτήσεων λόγω σύνδεσης", true);
-        state.questions = getFallbackQuestions(activeTopic, state.questionCount);
+        console.warn("Using offline fallback bank:", err);
+        showToast("Ενεργοποίηση offline ερωτήσεων", false);
+        state.questions = getFallbackQuestions(state.totalQuestions);
       }
 
-      startQuizGame();
+      startBattleGameplay();
     });
 
-    // --- 11. Gameplay Logic ---
-    function startQuizGame() {
-      showScreen('gameplay');
-      quizTopicBadge.textContent = state.activeTopic;
-      totalQNum.textContent = state.questions.length;
-      scoreDisplay.textContent = state.score;
-      loadQuestion(state.currentIndex);
+    function updateScoreboardDisplays() {
+      scoreA.textContent = state.teamA.score;
+      scoreB.textContent = state.teamB.score;
+
+      streakA.classList.toggle('hidden', state.teamA.streak < 2);
+      streakA.textContent = `🔥 ${state.teamA.streak}x`;
+
+      streakB.classList.toggle('hidden', state.teamB.streak < 2);
+      streakB.textContent = `🔥 ${state.teamB.streak}x`;
+
+      // Spotlight Active Team
+      if (state.activeTeam === 'A') {
+        teamCardA.classList.add('active-team-a');
+        teamCardB.classList.remove('active-team-b');
+        teamTurnDotA.classList.remove('hidden');
+        teamTurnDotB.classList.add('hidden');
+        teamTurnIndicatorA.textContent = state.isStealPhase ? '⚡ STEAL!' : '▶ ΣΕΙΡΑ';
+        teamTurnIndicatorA.className = state.isStealPhase ? 'text-[10px] font-black uppercase tracking-wider text-amber-300 animate-pulse' : 'text-[10px] font-bold uppercase tracking-wider text-cyan-400';
+        teamTurnIndicatorB.textContent = 'Αναμονή';
+        teamTurnIndicatorB.className = 'text-[10px] font-bold uppercase tracking-wider text-slate-500';
+      } else {
+        teamCardB.classList.add('active-team-b');
+        teamCardA.classList.remove('active-team-a');
+        teamTurnDotB.classList.remove('hidden');
+        teamTurnDotA.classList.add('hidden');
+        teamTurnIndicatorB.textContent = state.isStealPhase ? '⚡ STEAL!' : '▶ ΣΕΙΡΑ';
+        teamTurnIndicatorB.className = state.isStealPhase ? 'text-[10px] font-black uppercase tracking-wider text-amber-300 animate-pulse' : 'text-[10px] font-bold uppercase tracking-wider text-rose-400';
+        teamTurnIndicatorA.textContent = 'Αναμονή';
+        teamTurnIndicatorA.className = 'text-[10px] font-bold uppercase tracking-wider text-slate-500';
+      }
     }
 
-    function loadQuestion(index) {
+    // --- 8. Gameplay Management ---
+    function startBattleGameplay() {
+      switchScreen('gameplay');
+      quizTopicBadge.textContent = state.activeTopic;
+      totalQNum.textContent = state.totalQuestions;
+      renderCurrentQuestion();
+    }
+
+    function renderCurrentQuestion() {
       state.answered = false;
-      const q = state.questions[index];
+      state.isStealPhase = false;
+      
+      // Calculate active team: Even index -> Team A, Odd index -> Team B
+      state.activeTeam = (state.currentIndex % 2 === 0) ? 'A' : 'B';
+      updateScoreboardDisplays();
 
-      // Update counters & UI
-      currentQNum.textContent = index + 1;
-      const progressPercent = ((index) / state.questions.length) * 100;
-      progressBar.style.width = `${progressPercent}%`;
+      currentQNum.textContent = state.currentIndex + 1;
+      const currentQ = state.questions[state.currentIndex];
 
-      questionText.textContent = q.question;
+      // Update Turn Banner
+      const currentTeamObj = (state.activeTeam === 'A') ? state.teamA : state.teamB;
+      const isCyan = state.activeTeam === 'A';
+      turnBanner.className = `p-3 rounded-xl text-center font-display font-black text-sm sm:text-base border ${
+        isCyan ? 'bg-cyan-950/60 border-cyan-500/50 text-cyan-300' : 'bg-rose-950/60 border-rose-500/50 text-rose-300'
+      }`;
+      turnBanner.innerHTML = `
+        <span>Σειρά για: ${currentTeamObj.avatar} <strong>${currentTeamObj.name}</strong></span>
+        <span class="block text-xs font-normal opacity-80 mt-0.5">Απάντησε σωστά για 100 πόντους + Speed Bonus!</span>
+      `;
+
+      questionText.textContent = currentQ.question;
       explanationBox.classList.add('hidden');
       nextBtn.classList.add('hidden');
 
-      // Build options
+      // Populate Options
       optionsContainer.innerHTML = '';
-      const letters = ['Α', 'Β', 'Γ', 'Δ'];
+      const labels = ['Α', 'Β', 'Γ', 'Δ'];
 
-      q.options.forEach((opt, i) => {
+      currentQ.options.forEach((opt, idx) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `option-btn w-full p-4 rounded-xl glass-btn text-left text-sm sm:text-base font-medium flex items-center justify-between group transition-all`;
+        btn.className = `option-btn w-full p-4 rounded-xl glass-btn text-left text-sm sm:text-base font-semibold flex items-center justify-between group transition-all`;
         btn.innerHTML = `
           <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center font-bold text-xs transition-colors">
-              ${letters[i]}
+            <span class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 group-hover:bg-cyan-600 group-hover:text-white flex items-center justify-center font-bold text-xs transition-colors">
+              ${labels[idx]}
             </span>
-            <span class="text-slate-200 group-hover:text-white">${opt}</span>
+            <span class="text-slate-100">${opt}</span>
           </div>
-          <span class="option-icon text-base opacity-0 transition-opacity"></span>
+          <span class="option-icon text-base font-black opacity-0"></span>
         `;
-
-        btn.addEventListener('click', () => handleAnswer(i, btn));
+        btn.addEventListener('click', () => handleOptionSelection(idx));
         optionsContainer.appendChild(btn);
       });
 
-      // Start Timer
-      startTimer();
+      startCountdown(15);
     }
 
-    function startTimer() {
+    // Timer implementation
+    function startCountdown(seconds) {
       clearInterval(state.timerInterval);
-      state.timer = 15;
-      updateTimerUI();
+      state.timer = seconds;
+      state.maxTimer = seconds;
+      renderTimerUI();
 
       state.timerInterval = setInterval(() => {
         state.timer--;
-        updateTimerUI();
+        renderTimerUI();
 
         if (state.timer <= 3 && state.timer > 0) {
-          sfx.playTick();
+          sound.playTick();
         }
 
         if (state.timer <= 0) {
           clearInterval(state.timerInterval);
-          handleTimeout();
+          handleTimeExpire();
         }
       }, 1000);
     }
 
-    function updateTimerUI() {
+    function renderTimerUI() {
       timerText.textContent = state.timer;
-      const totalCircumference = 125.6; // 2 * PI * 20
-      const offset = totalCircumference - (state.timer / 15) * totalCircumference;
+      const circumference = 125.6; // 2 * PI * 20
+      const offset = circumference - (state.timer / state.maxTimer) * circumference;
       timerCircle.style.strokeDashoffset = offset;
 
       if (state.timer <= 4) {
-        timerCircle.style.stroke = '#ef4444'; // Red alert
-        timerText.classList.add('text-rose-400');
+        timerCircle.style.stroke = '#f43f5e';
+        timerText.className = 'absolute font-display font-black text-base text-rose-400 animate-pulse';
       } else {
-        timerCircle.style.stroke = '#6366f1';
-        timerText.classList.remove('text-rose-400');
+        timerCircle.style.stroke = state.isStealPhase ? '#f59e0b' : (state.activeTeam === 'A' ? '#22d3ee' : '#f43f5e');
+        timerText.className = 'absolute font-display font-black text-base text-white';
       }
     }
 
-    function handleTimeout() {
+    // --- 9. Answer Handling & Steal Logic ---
+    function handleTimeExpire() {
       if (state.answered) return;
-      state.answered = true;
-      sfx.playWrong();
 
       const currentQ = state.questions[state.currentIndex];
-      highlightAnswers(-1, currentQ.correctIndex);
 
-      state.streak = 0;
-      streakBadge.classList.add('hidden');
-
-      state.userAnswers.push({
-        question: currentQ.question,
-        selected: "Χρόνος έληξε",
-        correct: currentQ.options[currentQ.correctIndex],
-        isCorrect: false,
-        explanation: currentQ.explanation
-      });
-
-      showExplanation(false, "Ο χρόνος έληξε!");
+      if (!state.isStealPhase) {
+        // Active team failed on time -> Offer Steal to Opponent!
+        sound.playWrong();
+        initiateStealPhase("Ο χρόνος έληξε!");
+      } else {
+        // Steal phase also expired
+        sound.playWrong();
+        revealFinalAnswer(currentQ.answerIndex, -1, false);
+        showExplanationDrawer(false, "Έληξε ο χρόνος κλοπής!");
+      }
     }
 
-    function handleAnswer(selectedIndex, buttonEl) {
+    function handleOptionSelection(selectedIndex) {
       if (state.answered) return;
-      state.answered = true;
       clearInterval(state.timerInterval);
 
       const currentQ = state.questions[state.currentIndex];
-      const isCorrect = (selectedIndex === currentQ.correctIndex);
+      const isCorrect = (selectedIndex === currentQ.answerIndex);
 
-      highlightAnswers(selectedIndex, currentQ.correctIndex);
+      if (!state.isStealPhase) {
+        // NORMAL TURN
+        if (isCorrect) {
+          state.answered = true;
+          sound.playCorrect();
+          const activeTeamObj = (state.activeTeam === 'A') ? state.teamA : state.teamB;
+          activeTeamObj.correctCount++;
+          activeTeamObj.streak++;
 
-      if (isCorrect) {
-        sfx.playCorrect();
-        state.streak++;
+          // Points calculation
+          const speedBonus = state.timer * 4;
+          const streakBonus = (activeTeamObj.streak - 1) * 25;
+          const pointsGained = 100 + speedBonus + streakBonus;
+          activeTeamObj.score += pointsGained;
 
-        // Base score 100 + Speed Bonus (έως 50) + Streak bonus (20 ανά combo)
-        const speedBonus = state.timer * 3;
-        const streakBonus = (state.streak - 1) * 20;
-        const roundPoints = 100 + speedBonus + streakBonus;
-        state.score += roundPoints;
-
-        scoreDisplay.textContent = state.score;
-
-        if (state.streak >= 2) {
-          streakCount.textContent = state.streak;
-          streakBadge.classList.remove('hidden');
+          revealFinalAnswer(currentQ.answerIndex, selectedIndex, true);
+          updateScoreboardDisplays();
+          showExplanationDrawer(true, `+${pointsGained} πόντοι για την ομάδα ${activeTeamObj.name}!`);
+        } else {
+          // Missed answer -> Initiate STEAL for the other team
+          sound.playWrong();
+          initiateStealPhase("Λάθος απάντηση!");
         }
       } else {
-        sfx.playWrong();
-        state.streak = 0;
-        streakBadge.classList.add('hidden');
+        // STEAL PHASE
+        state.answered = true;
+        const stealingTeamObj = (state.activeTeam === 'A') ? state.teamA : state.teamB;
+
+        if (isCorrect) {
+          sound.playCorrect();
+          stealingTeamObj.steals++;
+          stealingTeamObj.score += 75; // Steal points
+          revealFinalAnswer(currentQ.answerIndex, selectedIndex, true);
+          updateScoreboardDisplays();
+          showExplanationDrawer(true, `🔥 Επιτυχημένο STEAL! +75 πόντοι στην ομάδα ${stealingTeamObj.name}!`);
+        } else {
+          sound.playWrong();
+          revealFinalAnswer(currentQ.answerIndex, selectedIndex, false);
+          showExplanationDrawer(false, `Αποτυχημένη απόπειρα Steal!`);
+        }
       }
-
-      state.userAnswers.push({
-        question: currentQ.question,
-        selected: currentQ.options[selectedIndex],
-        correct: currentQ.options[currentQ.correctIndex],
-        isCorrect: isCorrect,
-        explanation: currentQ.explanation
-      });
-
-      showExplanation(isCorrect);
     }
 
-    function highlightAnswers(selectedIndex, correctIndex) {
-      const optionButtons = optionsContainer.querySelectorAll('.option-btn');
+    function initiateStealPhase(reason) {
+      state.isStealPhase = true;
+      // Reset streak for failing team
+      const failingTeam = (state.activeTeam === 'A') ? state.teamA : state.teamB;
+      failingTeam.streak = 0;
 
+      // Switch turn to the other team for STEAL
+      state.activeTeam = (state.activeTeam === 'A') ? 'B' : 'A';
+      updateScoreboardDisplays();
+      sound.playStealAlert();
+
+      const stealingTeam = (state.activeTeam === 'A') ? state.teamA : state.teamB;
+      turnBanner.className = 'p-3 rounded-xl text-center font-display font-black text-sm sm:text-base border bg-amber-950/80 border-amber-500 text-amber-300 animate-pulse';
+      turnBanner.innerHTML = `
+        <span>⚡ ΕΥΚΑΙΡΙΑ STEAL: ${stealingTeam.avatar} <strong>${stealingTeam.name}</strong></span>
+        <span class="block text-xs font-normal opacity-90 mt-0.5">${reason} Έχετε 6 δευτερόλεπτα να κλέψετε 75 πόντους!</span>
+      `;
+
+      // Restart short timer for Steal
+      startCountdown(6);
+    }
+
+    function revealFinalAnswer(correctIndex, chosenIndex, isCorrect) {
+      const optionButtons = optionsContainer.querySelectorAll('.option-btn');
       optionButtons.forEach((btn, idx) => {
-        btn.classList.remove('glass-btn', 'hover:border-indigo-400');
         btn.disabled = true;
+        btn.classList.remove('glass-btn', 'hover:border-cyan-400');
         const icon = btn.querySelector('.option-icon');
 
         if (idx === correctIndex) {
-          btn.classList.add('bg-emerald-500/20', 'border-emerald-500', 'text-emerald-200');
-          icon.textContent = '✓';
+          btn.classList.add('bg-emerald-500/25', 'border-emerald-500', 'text-emerald-200');
+          icon.textContent = '✓ Σωστό';
           icon.classList.add('text-emerald-400', 'opacity-100');
-        } else if (idx === selectedIndex) {
-          btn.classList.add('bg-rose-500/20', 'border-rose-500', 'text-rose-200');
+        } else if (idx === chosenIndex) {
+          btn.classList.add('bg-rose-500/25', 'border-rose-500', 'text-rose-200');
           icon.textContent = '✕';
           icon.classList.add('text-rose-400', 'opacity-100');
         } else {
@@ -964,111 +1213,95 @@
       });
     }
 
-    function showExplanation(isCorrect, customTitle = null) {
+    function showExplanationDrawer(isPositive, titleText) {
       const currentQ = state.questions[state.currentIndex];
-      const icon = document.getElementById('explanationIcon');
-      const title = document.getElementById('explanationTitle');
-
-      if (customTitle) {
-        icon.textContent = '⏰';
-        title.textContent = customTitle;
-        title.className = 'font-bold text-rose-400 text-xs uppercase tracking-wider mb-1';
-      } else if (isCorrect) {
-        icon.textContent = '🎉';
-        title.textContent = 'Σωστή Απάντηση!';
-        title.className = 'font-bold text-emerald-400 text-xs uppercase tracking-wider mb-1';
-      } else {
-        icon.textContent = '❌';
-        title.textContent = 'Λανθασμένη Απάντηση';
-        title.className = 'font-bold text-rose-400 text-xs uppercase tracking-wider mb-1';
-      }
+      explanationIcon.textContent = isPositive ? '🎉' : '❌';
+      explanationTitle.textContent = titleText;
+      explanationTitle.className = isPositive 
+        ? 'font-bold text-xs uppercase tracking-wider mb-1 text-emerald-400' 
+        : 'font-bold text-xs uppercase tracking-wider mb-1 text-rose-400';
 
       explanationText.textContent = currentQ.explanation;
       explanationBox.classList.remove('hidden');
 
-      // Next Button text
-      const isLast = state.currentIndex === state.questions.length - 1;
-      nextBtnText.textContent = isLast ? 'Προβολή Αποτελεσμάτων 🏆' : 'Επόμενη Ερώτηση';
+      const isLast = (state.currentIndex === state.totalQuestions - 1);
+      nextBtnText.textContent = isLast ? 'Στέψη Νικητή 🏆' : 'Επόμενος Γύρος ➔';
       nextBtn.classList.remove('hidden');
     }
 
     nextBtn.addEventListener('click', () => {
       state.currentIndex++;
-      if (state.currentIndex < state.questions.length) {
-        loadQuestion(state.currentIndex);
+      if (state.currentIndex < state.totalQuestions) {
+        renderCurrentQuestion();
       } else {
-        finishQuiz();
+        concludeBattle();
       }
     });
 
-    // --- 12. Results & Review ---
-    function finishQuiz() {
+    // --- 10. Finish & Victory Screen ---
+    function concludeBattle() {
       clearInterval(state.timerInterval);
-      showScreen('results');
-      sfx.playComplete();
+      switchScreen('results');
+      sound.playVictory();
 
-      const total = state.questions.length;
-      const correctCount = state.userAnswers.filter(a => a.isCorrect).length;
-      const accuracy = Math.round((correctCount / total) * 100);
-
-      document.getElementById('finalScore').textContent = state.score;
-      document.getElementById('finalAccuracy').textContent = `${accuracy}%`;
-      document.getElementById('finalCorrectCount').textContent = `${correctCount}/${total}`;
-
-      // Performance Evaluation
-      const resultIcon = document.getElementById('resultIcon');
-      const resultTitle = document.getElementById('resultTitle');
-      const resultSubtitle = document.getElementById('resultSubtitle');
-
-      if (accuracy === 100) {
-        resultIcon.textContent = '👑';
-        resultTitle.textContent = 'Απόλυτη Κυριαρχία!';
-        resultSubtitle.textContent = 'Απάντησες άψογα σε όλες τις ερωτήσεις. Είσαι αληθινός Quiz Master!';
-      } else if (accuracy >= 70) {
-        resultIcon.textContent = '🌟';
-        resultTitle.textContent = 'Εξαιρετικό Αποτέλεσμα!';
-        resultSubtitle.textContent = 'Πολύ υψηλές γνώσεις! Με λίγη ακόμα εξάσκηση θα φτάσεις στην κορυφή.';
-      } else if (accuracy >= 40) {
-        resultIcon.textContent = '👍';
-        resultTitle.textContent = 'Καλή Προσπάθεια!';
-        resultSubtitle.textContent = 'Έχεις καλές βάσεις. Δοκίμασε ξανά για να βελτιώσεις το σκορ σου!';
-      } else {
-        resultIcon.textContent = '📚';
-        resultTitle.textContent = 'Χρειάζεται Μελέτη!';
-        resultSubtitle.textContent = 'Κάθε προσπάθεια είναι ευκαιρία μάθησης. Μην τα παρατάς!';
+      // Trigger celebration confetti
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
       }
 
-      // Render Review
-      const reviewContainer = document.getElementById('reviewContainer');
-      reviewContainer.innerHTML = '';
+      // Populate Final Cards
+      const scoreNumA = state.teamA.score;
+      const scoreNumB = state.teamB.score;
 
-      state.userAnswers.forEach((ans, idx) => {
-        const item = document.createElement('div');
-        item.className = `p-3 rounded-xl border ${ans.isCorrect ? 'border-emerald-500/30 bg-emerald-950/20' : 'border-rose-500/30 bg-rose-950/20'} text-xs`;
-        item.innerHTML = `
-          <div class="flex items-start justify-between gap-2 mb-1.5">
-            <span class="font-bold text-white text-xs">${idx + 1}. ${ans.question}</span>
-            <span class="font-bold ${ans.isCorrect ? 'text-emerald-400' : 'text-rose-400'}">${ans.isCorrect ? '✓ Σωστό' : '✕ Λάθος'}</span>
-          </div>
-          <div class="text-slate-300 space-y-0.5">
-            ${!ans.isCorrect ? `<p><span class="text-slate-400">Η επιλογή σου:</span> <span class="text-rose-300">${ans.selected}</span></p>` : ''}
-            <p><span class="text-slate-400">Σωστή απάντηση:</span> <span class="text-emerald-300 font-semibold">${ans.correct}</span></p>
-            <p class="text-[11px] text-slate-400 italic mt-1 bg-slate-900/50 p-1.5 rounded">💡 ${ans.explanation}</p>
-          </div>
-        `;
-        reviewContainer.appendChild(item);
-      });
+      document.getElementById('finalAvatarA').textContent = state.teamA.avatar;
+      document.getElementById('finalNameA').textContent = state.teamA.name;
+      document.getElementById('finalScoreA').textContent = scoreNumA;
+      document.getElementById('finalCorrectA').textContent = state.teamA.correctCount;
+      document.getElementById('finalStealsA').textContent = state.teamA.steals;
+
+      document.getElementById('finalAvatarB').textContent = state.teamB.avatar;
+      document.getElementById('finalNameB').textContent = state.teamB.name;
+      document.getElementById('finalScoreB').textContent = scoreNumB;
+      document.getElementById('finalCorrectB').textContent = state.teamB.correctCount;
+      document.getElementById('finalStealsB').textContent = state.teamB.steals;
+
+      const winnerTitle = document.getElementById('winnerTitle');
+      const winnerSubtitle = document.getElementById('winnerSubtitle');
+      const winnerCrown = document.getElementById('winnerCrown');
+
+      if (scoreNumA > scoreNumB) {
+        winnerCrown.textContent = '👑';
+        winnerTitle.className = 'font-display text-3xl sm:text-5xl font-black mb-2 tracking-tight text-cyan-400';
+        winnerTitle.textContent = `Νίκη για την ομάδα ${state.teamA.name}!`;
+        winnerSubtitle.textContent = `Συνέτριψε τον αντίπαλο με διαφορά ${scoreNumA - scoreNumB} πόντων!`;
+      } else if (scoreNumB > scoreNumA) {
+        winnerCrown.textContent = '👑';
+        winnerTitle.className = 'font-display text-3xl sm:text-5xl font-black mb-2 tracking-tight text-rose-400';
+        winnerTitle.textContent = `Νίκη για την ομάδα ${state.teamB.name}!`;
+        winnerSubtitle.textContent = `Επικράτησε με διαφορά ${scoreNumB - scoreNumA} πόντων!`;
+      } else {
+        winnerCrown.textContent = '🤝';
+        winnerTitle.className = 'font-display text-3xl sm:text-5xl font-black mb-2 tracking-tight text-amber-300';
+        winnerTitle.textContent = 'Απόλυτη Ισοπαλία!';
+        winnerSubtitle.textContent = 'Και οι δύο ομάδες ισοβάθμησαν στο ίδιο ακριβώς σκορ!';
+      }
     }
 
-    // --- 13. Replay & Restart Handlers ---
-    document.getElementById('retryBtn').addEventListener('click', () => {
-      startQuizBtn.click();
+    // Rematch & Reset Handlers
+    document.getElementById('rematchBtn').addEventListener('click', () => {
+      startBattleBtn.click();
     });
 
-    document.getElementById('newTopicBtn').addEventListener('click', () => {
-      showScreen('setup');
+    document.getElementById('resetSetupBtn').addEventListener('click', () => {
+      switchScreen('setup');
     });
 
+    // Initialize scoreboard on first load
+    updateSetupScoreboard();
   </script>
 </body>
 </html>
